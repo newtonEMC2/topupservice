@@ -1,0 +1,5 @@
+node_modules
+test/secrets
+secrets
+.env
+.env.*

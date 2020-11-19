@@ -1,0 +1,42 @@
+# Javascript Node CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-javascript/ for more details
+#
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/node:8.11
+      
+    steps:
+      - checkout
+      - setup_remote_docker
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "package.json" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
+
+      - run: yarn install
+
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package.json" }}
+        
+      # run tests!
+      - run: yarn test
+
+      # deploy to docker hub!
+      - deploy:
+          name: Publish application to docker hub
+          command: |
+            docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PWD
+            docker image build -t $DOCKER_PROJECT_NAME .
+            docker tag $DOCKER_PROJECT_NAME $DOCKER_HUB_USER/$DOCKER_PROJECT_NAME:$CIRCLE_SHA1
+            docker tag $DOCKER_PROJECT_NAME $DOCKER_HUB_USER/$DOCKER_PROJECT_NAME:latest
+            docker push $DOCKER_HUB_USER/$DOCKER_PROJECT_NAME:$CIRCLE_SHA1
+            docker push $DOCKER_HUB_USER/$DOCKER_PROJECT_NAME:latest
+
+
